@@ -1,4 +1,6 @@
+#! python3
 # pylint: disable=missing-docstring, invalid-name, trailing-whitespace
+from __future__ import absolute_import, division, print_function, unicode_literals
 import os
 import cv2
 import time
@@ -7,6 +9,55 @@ import ctypes
 import random
 import pickle
 
+
+import matplotlib.pylab as plt
+
+import tensorflow as tf
+import tensorflow_hub as hub
+
+from tensorflow.keras import layers
+
+
+# https://www.tensorflow.org/tutorials/images/hub_with_keras#simple_transfer_learning
+print(tf.__version__)
+
+
+data_root = 'C:/Users/roe1and/apps/gna'
+# data_root = 'C:/Users/roe1and/Downloads/flower_photos/flower_photos'
+categories = ['available', 'busy', 'dnd', 'off', 'offline', 'unknown']
+
+image_generator = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1/255)
+image_data = image_generator.flow_from_directory(str(data_root))
+
+for image_batch, label_batch in image_data:
+  print("Image batch shape: ", image_batch.shape)
+  print("Labe batch shape: ", label_batch.shape)
+  break
+classifier_url = "https://tfhub.dev/google/imagenet/mobilenet_v2_100_224/classification/2" #@param {type:"string"}
+def classifier(x):
+  classifier_module = hub.Module(classifier_url)
+  return classifier_module(x)
+  
+IMAGE_SIZE = hub.get_expected_image_size(hub.Module(classifier_url))
+
+classifier_layer = layers.Lambda(classifier, input_shape = IMAGE_SIZE+[3])
+classifier_model = tf.keras.Sequential([classifier_layer])
+classifier_model.summary()
+
+image_data = image_generator.flow_from_directory(str(data_root), target_size=IMAGE_SIZE)
+for image_batch,label_batch in image_data:
+  print("Image batch shape: ", image_batch.shape)
+  print("Labe batch shape: ", label_batch.shape)
+  break
+
+import tensorflow.keras.backend as K
+sess = K.get_session()
+init = tf.global_variables_initializer()
+
+sess.run(init)
+
+
+'''
 import numpy as np
 from PIL import ImageGrab
 import tensorflow as tf
@@ -16,7 +67,7 @@ from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten, Conv2D,
 
 image_dir = 'c:/temp/gna/train'
 categories = ['available', 'busy', 'dnd', 'off', 'offline', 'unknown']
-
+'''
 '''
 x_in = open('x.pickle', 'rb')
 x = pickle.load(x_in)
